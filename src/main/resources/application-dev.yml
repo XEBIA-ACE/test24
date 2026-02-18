@@ -1,0 +1,9 @@
+spring:
+  jpa:
+    show-sql: true
+
+logging:
+  level:
+    root: INFO
+    com.usermanagement: DEBUG
+    org.springframework.web: DEBUG

@@ -1,52 +1,39 @@
--- Insert default roles
-INSERT INTO roles (id, name, description, created_at) VALUES
-    (gen_random_uuid(), 'ROLE_USER', 'Standard user role with basic permissions', NOW()),
-    (gen_random_uuid(), 'ROLE_ADMIN', 'Administrator role with full permissions', NOW()),
-    (gen_random_uuid(), 'ROLE_MODERATOR', 'Moderator role with elevated permissions', NOW()),
-    (gen_random_uuid(), 'ROLE_SUPER_ADMIN', 'Super administrator with unrestricted access', NOW());
-
 -- Insert default permissions
-INSERT INTO permissions (id, name, description, resource, action, created_at) VALUES
-    -- User permissions
-    (gen_random_uuid(), 'USER_READ', 'Read user information', 'user', 'read', NOW()),
-    (gen_random_uuid(), 'USER_WRITE', 'Create and update user information', 'user', 'write', NOW()),
-    (gen_random_uuid(), 'USER_DELETE', 'Delete user accounts', 'user', 'delete', NOW()),
-    (gen_random_uuid(), 'USER_MANAGE', 'Full user management capabilities', 'user', 'manage', NOW()),
+INSERT INTO permissions (id, name, description, resource, action, created_at, updated_at) VALUES
+    (gen_random_uuid(), 'USER_READ', 'Read user information', 'USER', 'READ', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'USER_CREATE', 'Create new users', 'USER', 'CREATE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'USER_UPDATE', 'Update user information', 'USER', 'UPDATE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'USER_DELETE', 'Delete users', 'USER', 'DELETE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'ROLE_READ', 'Read role information', 'ROLE', 'READ', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'ROLE_CREATE', 'Create new roles', 'ROLE', 'CREATE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'ROLE_UPDATE', 'Update role information', 'ROLE', 'UPDATE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'ROLE_DELETE', 'Delete roles', 'ROLE', 'DELETE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
-    -- Role permissions
-    (gen_random_uuid(), 'ROLE_READ', 'Read role information', 'role', 'read', NOW()),
-    (gen_random_uuid(), 'ROLE_WRITE', 'Create and update roles', 'role', 'write', NOW()),
-    (gen_random_uuid(), 'ROLE_DELETE', 'Delete roles', 'role', 'delete', NOW()),
+-- Insert default roles
+INSERT INTO roles (id, name, description, created_at, updated_at) VALUES
+    (gen_random_uuid(), 'ROLE_ADMIN', 'Administrator with full access', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'ROLE_USER', 'Standard user with basic access', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'ROLE_MODERATOR', 'Moderator with elevated privileges', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
-    -- Permission permissions
-    (gen_random_uuid(), 'PERMISSION_READ', 'Read permission information', 'permission', 'read', NOW()),
-    (gen_random_uuid(), 'PERMISSION_WRITE', 'Create and update permissions', 'permission', 'write', NOW()),
-    (gen_random_uuid(), 'PERMISSION_DELETE', 'Delete permissions', 'permission', 'delete', NOW());
-
--- Assign permissions to roles
--- ROLE_USER gets basic read permission
+-- Assign all permissions to ROLE_ADMIN
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id
-FROM roles r, permissions p
-WHERE r.name = 'ROLE_USER' AND p.name = 'USER_READ';
+FROM roles r
+CROSS JOIN permissions p
+WHERE r.name = 'ROLE_ADMIN';
 
--- ROLE_MODERATOR gets user read and write permissions
+-- Assign read permissions to ROLE_USER
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id
-FROM roles r, permissions p
-WHERE r.name = 'ROLE_MODERATOR' AND p.name IN ('USER_READ', 'USER_WRITE');
+FROM roles r
+CROSS JOIN permissions p
+WHERE r.name = 'ROLE_USER'
+AND p.action = 'READ';
 
--- ROLE_ADMIN gets all user and role permissions
+-- Assign read and update user permissions to ROLE_MODERATOR
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id
-FROM roles r, permissions p
-WHERE r.name = 'ROLE_ADMIN' AND p.name IN (
-    'USER_READ', 'USER_WRITE', 'USER_DELETE', 'USER_MANAGE',
-    'ROLE_READ', 'ROLE_WRITE', 'ROLE_DELETE'
-);
-
--- ROLE_SUPER_ADMIN gets all permissions
-INSERT INTO role_permissions (role_id, permission_id)
-SELECT r.id, p.id
-FROM roles r, permissions p
-WHERE r.name = 'ROLE_SUPER_ADMIN';
+FROM roles r
+CROSS JOIN permissions p
+WHERE r.name = 'ROLE_MODERATOR'
+AND (p.action = 'READ' OR (p.resource = 'USER' AND p.action = 'UPDATE'));

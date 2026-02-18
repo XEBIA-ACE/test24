@@ -1,14 +1,19 @@
 spring:
   jpa:
     show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
 
 logging:
   level:
     root: WARN
     com.usermanagement: INFO
+    org.springframework.security: WARN
     org.springframework.web: WARN
+    org.hibernate.SQL: WARN
 
 management:
   endpoint:
     health:
-      show-details: never
+      show-details: when-authorized

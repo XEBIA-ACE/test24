@@ -1,442 +1,385 @@
 # User Management Service
 
-A production-ready user management microservice built with Spring Boot, featuring JWT authentication, OAuth2 PKCE, Redis caching, and Kafka event streaming.
+A production-ready, enterprise-grade User Management Service built with Spring Boot, featuring OAuth 2.0 with PKCE, JWT authentication, Redis caching, and Kafka event streaming.
 
-## Features
+## 🚀 Features
 
 - **User Management**: Complete CRUD operations for user accounts
 - **Authentication & Authorization**:
   - JWT-based authentication with access and refresh tokens
-  - OAuth2 with PKCE support
-  - Role-based access control (RBAC)
-  - Permission-based authorization
+  - OAuth 2.0 with PKCE support for secure authorization
+  - Role-based access control (RBAC) with permissions
 - **Security**:
   - Password encryption with BCrypt
-  - Account locking after failed login attempts
-  - Token rotation and revocation
-  - CORS configuration
-- **Caching**: Redis-based distributed caching for improved performance
-- **Event Streaming**: Kafka integration for event-driven architecture
-- **API Documentation**: OpenAPI/Swagger UI
+  - Account lockout after failed login attempts
+  - Email verification workflow
+  - Password reset functionality
+- **Caching**: Redis-based caching for improved performance
+- **Event Streaming**: Kafka integration for publishing user lifecycle events
+- **API Documentation**: Interactive OpenAPI/Swagger documentation
 - **Observability**:
-  - Health checks
-  - Prometheus metrics
+  - Health checks and liveness probes
+  - Prometheus metrics export
   - Structured logging
 - **Database**: PostgreSQL with Flyway migrations
+- **Docker Support**: Multi-stage Dockerfile and docker-compose setup
 
-## Technology Stack
+## 📋 Prerequisites
 
-- **Java 17**
-- **Spring Boot 3.2.2**
-- **PostgreSQL 16**
-- **Redis 7**
-- **Apache Kafka**
-- **JWT (io.jsonwebtoken)**
-- **MapStruct** for DTO mapping
-- **Flyway** for database migrations
-- **Docker & Docker Compose**
-
-## Prerequisites
-
-- Java 17 or higher
+- Java 21 or higher
 - Maven 3.9+
-- Docker and Docker Compose (for local development)
+- Docker and Docker Compose (for containerized deployment)
+- PostgreSQL 16+ (if running locally)
+- Redis 7+ (if running locally)
+- Kafka (if running locally)
 
-## Getting Started
+## 🏗️ Architecture
 
-### 1. Clone the Repository
+The application follows Clean Architecture principles with clear separation of concerns:
 
+```
+src/
+├── main/
+│   ├── java/com/usermanagement/
+│   │   ├── api/                    # API Layer
+│   │   │   ├── controller/         # REST Controllers
+│   │   │   ├── dto/                # Data Transfer Objects
+│   │   │   │   ├── request/
+│   │   │   │   └── response/
+│   │   │   └── mapper/             # Entity-DTO Mappers
+│   │   ├── config/                 # Configuration Classes
+│   │   ├── domain/                 # Domain Layer
+│   │   │   ├── entity/             # JPA Entities
+│   │   │   ├── repository/         # Data Access Layer
+│   │   │   └── service/            # Business Logic
+│   │   ├── event/                  # Event Models
+│   │   ├── exception/              # Custom Exceptions
+│   │   └── security/               # Security Components
+│   └── resources/
+│       ├── db/migration/           # Flyway Migrations
+│       └── application*.yml        # Configuration Files
+└── test/                           # Test Classes
+```
+
+## 🚀 Quick Start
+
+### Option 1: Using Docker Compose (Recommended)
+
+1. Clone the repository:
 ```bash
 git clone <repository-url>
 cd user-management-service
 ```
 
-### 2. Configure Environment Variables
-
-Copy the example environment file:
-
+2. Create environment file:
 ```bash
 cp .env.example .env
+# Edit .env with your configuration
 ```
 
-Edit `.env` and configure your environment-specific values:
-
-```properties
-# Database
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=user_management
-DB_USERNAME=postgres
-DB_PASSWORD=postgres
-
-# JWT Secret (change in production!)
-JWT_SECRET=your-256-bit-secret-key-change-this-in-production
-
-# Redis
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
-# Kafka
-KAFKA_BOOTSTRAP_SERVERS=localhost:9092
-```
-
-### 3. Run with Docker Compose (Recommended)
-
-Start all services (PostgreSQL, Redis, Kafka, and the application):
-
+3. Start all services:
 ```bash
 docker-compose up -d
 ```
 
 The application will be available at `http://localhost:8080`
 
-### 4. Run Locally (Without Docker)
+### Option 2: Local Development
 
-#### Start Dependencies
-
+1. Start required services (PostgreSQL, Redis, Kafka):
 ```bash
-# Start PostgreSQL
-docker run -d --name postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=user_management -p 5432:5432 postgres:16-alpine
-
-# Start Redis
-docker run -d --name redis -p 6379:6379 redis:7-alpine
-
-# Start Kafka (requires Zookeeper)
-docker run -d --name zookeeper -e ZOOKEEPER_CLIENT_PORT=2181 -p 2181:2181 confluentinc/cp-zookeeper:7.5.0
-docker run -d --name kafka -e KAFKA_ZOOKEEPER_CONNECT=localhost:2181 -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092 -p 9092:9092 confluentinc/cp-kafka:7.5.0
+docker-compose up -d postgres redis zookeeper kafka
 ```
 
-#### Build and Run the Application
-
+2. Configure environment variables:
 ```bash
-# Build the application
-mvn clean package
+export DB_HOST=localhost
+export DB_PORT=5432
+export DB_NAME=user_management
+export DB_USERNAME=postgres
+export DB_PASSWORD=postgres
+export REDIS_HOST=localhost
+export REDIS_PORT=6379
+export KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+export JWT_SECRET=your-256-bit-secret-key-change-this-in-production
+```
 
-# Run the application
+3. Run database migrations:
+```bash
+mvn flyway:migrate
+```
+
+4. Build and run the application:
+```bash
+mvn clean package
 java -jar target/user-management-service-1.0.0.jar
 ```
 
 Or run directly with Maven:
-
 ```bash
 mvn spring-boot:run
 ```
 
-## API Documentation
+## 📚 API Documentation
 
-Once the application is running, access the Swagger UI at:
+Once the application is running, access the interactive API documentation:
 
-```
-http://localhost:8080/swagger-ui.html
-```
+- **Swagger UI**: http://localhost:8080/swagger-ui.html
+- **OpenAPI Spec**: http://localhost:8080/v3/api-docs
 
-OpenAPI specification is available at:
+### Key Endpoints
 
-```
-http://localhost:8080/api-docs
-```
+#### Authentication
 
-## API Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/auth/register` | Register a new user |
+| POST | `/api/v1/auth/login` | Login and receive JWT tokens |
+| POST | `/api/v1/auth/refresh` | Refresh access token |
+| POST | `/api/v1/auth/logout` | Logout and revoke refresh token |
+| GET | `/api/v1/auth/verify-email?token={token}` | Verify email address |
 
-### Authentication
+#### User Management
 
-| Method | Endpoint | Description | Auth Required |
+| Method | Endpoint | Description | Required Role |
 |--------|----------|-------------|---------------|
-| POST | `/api/v1/auth/login` | User login | No |
-| POST | `/api/v1/auth/refresh` | Refresh access token | No |
-| POST | `/api/v1/auth/logout` | User logout | No |
+| GET | `/api/v1/users` | Get all users (paginated) | ADMIN |
+| GET | `/api/v1/users/{id}` | Get user by ID | ADMIN or Owner |
+| GET | `/api/v1/users/username/{username}` | Get user by username | ADMIN or Owner |
+| PUT | `/api/v1/users/{id}` | Update user | ADMIN or Owner |
+| DELETE | `/api/v1/users/{id}` | Delete user | ADMIN |
+| POST | `/api/v1/users/{id}/activate` | Activate user account | ADMIN |
+| POST | `/api/v1/users/{id}/deactivate` | Deactivate user account | ADMIN |
 
-### User Management
+#### Health & Monitoring
 
-| Method | Endpoint | Description | Auth Required | Role |
-|--------|----------|-------------|---------------|------|
-| POST | `/api/v1/users/register` | Register new user | No | - |
-| GET | `/api/v1/users/{id}` | Get user by ID | Yes | USER, ADMIN |
-| GET | `/api/v1/users` | Get all users (paginated) | Yes | ADMIN |
-| PUT | `/api/v1/users/{id}` | Update user | Yes | USER, ADMIN |
-| DELETE | `/api/v1/users/{id}` | Delete user | Yes | ADMIN |
-| PATCH | `/api/v1/users/{id}/enable` | Enable user | Yes | ADMIN |
-| PATCH | `/api/v1/users/{id}/disable` | Disable user | Yes | ADMIN |
-| PATCH | `/api/v1/users/{id}/lock` | Lock user | Yes | ADMIN |
-| PATCH | `/api/v1/users/{id}/unlock` | Unlock user | Yes | ADMIN |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/health` | Simple health check |
+| GET | `/actuator/health` | Detailed health information |
+| GET | `/actuator/metrics` | Application metrics |
+| GET | `/actuator/prometheus` | Prometheus metrics |
 
-### Health & Monitoring
+## 🔐 Authentication Flow
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/api/v1/health` | Health check | No |
-| GET | `/actuator/health` | Actuator health | No |
-| GET | `/actuator/metrics` | Prometheus metrics | No |
+### Registration & Login
 
-## Example Usage
-
-### 1. Register a New User
-
+1. **Register a new user**:
 ```bash
-curl -X POST http://localhost:8080/api/v1/users/register \
+curl -X POST http://localhost:8080/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "johndoe",
-    "email": "john.doe@example.com",
-    "password": "SecurePass123!",
+    "email": "john@example.com",
+    "password": "SecureP@ss123",
     "firstName": "John",
-    "lastName": "Doe",
-    "phoneNumber": "+1234567890"
+    "lastName": "Doe"
   }'
 ```
 
-### 2. Login
-
+2. **Login**:
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "usernameOrEmail": "johndoe",
-    "password": "SecurePass123!"
+    "password": "SecureP@ss123"
   }'
 ```
 
 Response:
-
 ```json
 {
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "tokenType": "Bearer",
-  "expiresIn": 86400000,
-  "issuedAt": "2024-01-15T10:30:00",
-  "user": {
-    "id": "123e4567-e89b-12d3-a456-426614174000",
-    "username": "johndoe",
-    "email": "john.doe@example.com",
-    "firstName": "John",
-    "lastName": "Doe",
-    "roles": ["ROLE_USER"]
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "tokenType": "Bearer",
+    "expiresIn": 3600,
+    "user": {
+      "id": "123e4567-e89b-12d3-a456-426614174000",
+      "username": "johndoe",
+      "email": "john@example.com",
+      "firstName": "John",
+      "lastName": "Doe"
+    }
   }
 }
 ```
 
-### 3. Access Protected Endpoint
-
+3. **Access protected endpoints**:
 ```bash
-curl -X GET http://localhost:8080/api/v1/users/{userId} \
-  -H "Authorization: Bearer {accessToken}"
+curl -X GET http://localhost:8080/api/v1/users/123e4567-e89b-12d3-a456-426614174000 \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
-### 4. Refresh Token
+### Token Refresh
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/refresh \
   -H "Content-Type: application/json" \
   -d '{
-    "refreshToken": "{refreshToken}"
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
   }'
 ```
 
-## Architecture
+## ⚙️ Configuration
 
-### Clean Architecture Layers
+### Environment Variables
 
-```
-├── controller/          # REST API Layer (Presentation)
-├── service/            # Business Logic Layer
-│   ├── impl/          # Service implementations
-├── repository/         # Data Access Layer
-├── domain/            # Domain Models
-│   ├── entity/        # JPA Entities
-│   ├── dto/           # Data Transfer Objects
-│   └── enums/         # Enumerations
-├── security/          # Security components (JWT, OAuth2)
-├── config/            # Configuration classes
-├── exception/         # Exception handling
-└── mapper/            # DTO-Entity mappers
-```
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SPRING_PROFILES_ACTIVE` | Active Spring profile | `dev` |
+| `DB_HOST` | PostgreSQL host | `localhost` |
+| `DB_PORT` | PostgreSQL port | `5432` |
+| `DB_NAME` | Database name | `user_management` |
+| `DB_USERNAME` | Database username | `postgres` |
+| `DB_PASSWORD` | Database password | `postgres` |
+| `REDIS_HOST` | Redis host | `localhost` |
+| `REDIS_PORT` | Redis port | `6379` |
+| `KAFKA_BOOTSTRAP_SERVERS` | Kafka bootstrap servers | `localhost:9092` |
+| `JWT_SECRET` | JWT signing secret (min 32 chars) | - |
+| `JWT_ACCESS_TOKEN_EXPIRATION` | Access token expiration (ms) | `3600000` (1 hour) |
+| `JWT_REFRESH_TOKEN_EXPIRATION` | Refresh token expiration (ms) | `86400000` (24 hours) |
 
-### Database Schema
+### Application Profiles
 
-#### Users Table
-- Stores user account information
-- Includes audit fields (created_at, updated_at)
-- Version field for optimistic locking
+- **dev**: Development profile with debug logging
+- **prod**: Production profile with optimized settings
+- **test**: Test profile for running tests
 
-#### Roles Table
-- Predefined roles (USER, ADMIN, MODERATOR, SUPER_ADMIN)
-- Many-to-many relationship with users
-
-#### Permissions Table
-- Granular permissions for fine-grained access control
-- Many-to-many relationship with roles
-
-#### Refresh Tokens Table
-- Stores refresh tokens with expiration
-- Tracks IP address and user agent
-- Supports token revocation
-
-## Security Features
-
-### Password Requirements
-
-Passwords must contain:
-- At least 8 characters
-- One uppercase letter
-- One lowercase letter
-- One digit
-- One special character (@$!%*?&)
-
-### Account Locking
-
-- User accounts are automatically locked after 5 failed login attempts
-- Admins can manually unlock accounts via API
-
-### Token Management
-
-- **Access Token**: Short-lived (24 hours by default)
-- **Refresh Token**: Long-lived (7 days by default)
-- Refresh tokens can be revoked on logout
-- Tokens are stored in database for validation
-
-## Caching Strategy
-
-Redis is used for caching user data:
-
-- User responses are cached with configurable TTL (1 hour by default)
-- Cache is invalidated on user updates/deletions
-- Cache keys follow pattern: `user:{userId}`
-
-## Event Streaming
-
-User events are published to Kafka topic `user-events`:
-
-- USER_REGISTERED
-- USER_UPDATED
-- USER_DELETED
-- USER_ENABLED
-- USER_DISABLED
-- USER_LOCKED
-- USER_UNLOCKED
-
-Event payload includes:
-```json
-{
-  "eventType": "USER_REGISTERED",
-  "userId": "uuid",
-  "username": "string",
-  "email": "string",
-  "timestamp": "ISO-8601"
-}
+Switch profiles using:
+```bash
+export SPRING_PROFILES_ACTIVE=prod
 ```
 
-## Testing
+## 🗄️ Database Schema
+
+### Main Tables
+
+- **users**: User account information
+- **roles**: Role definitions
+- **permissions**: Permission definitions
+- **user_roles**: User-role associations
+- **role_permissions**: Role-permission associations
+- **refresh_tokens**: Active refresh tokens
+
+### Default Roles
+
+- **ROLE_ADMIN**: Full system access
+- **ROLE_MODERATOR**: Elevated privileges for user management
+- **ROLE_USER**: Standard user access
+
+## 📊 Monitoring & Observability
+
+### Health Checks
+
+```bash
+curl http://localhost:8080/actuator/health
+```
+
+### Metrics
+
+Access Prometheus metrics:
+```bash
+curl http://localhost:8080/actuator/prometheus
+```
+
+### Grafana Dashboard
+
+Access Grafana at http://localhost:3000 (default credentials: admin/admin)
+
+## 🧪 Testing
 
 ### Run Unit Tests
-
 ```bash
 mvn test
 ```
 
 ### Run Integration Tests
-
 ```bash
 mvn verify
 ```
 
-## Production Deployment
-
-### Environment Variables
-
-Ensure these are properly configured in production:
-
-```properties
-# Use strong JWT secret (at least 256 bits)
-JWT_SECRET=<generate-strong-secret>
-
-# Production database credentials
-DB_HOST=<production-db-host>
-DB_USERNAME=<db-user>
-DB_PASSWORD=<strong-password>
-
-# Redis configuration
-REDIS_HOST=<redis-host>
-REDIS_PASSWORD=<redis-password>
-
-# Kafka configuration
-KAFKA_BOOTSTRAP_SERVERS=<kafka-servers>
-
-# OAuth2 configuration
-OAUTH2_CLIENT_ID=<your-client-id>
-OAUTH2_CLIENT_SECRET=<your-client-secret>
-OAUTH2_ISSUER_URI=<issuer-uri>
+### Run Specific Test Class
+```bash
+mvn test -Dtest=UserServiceTest
 ```
 
-### Build Production Image
+### Test Coverage
+```bash
+mvn jacoco:report
+```
 
+## 🔧 Development
+
+### Build the Project
+```bash
+mvn clean package
+```
+
+### Run Locally
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+### Build Docker Image
 ```bash
 docker build -t user-management-service:latest .
 ```
 
-### Health Checks
+### Database Migrations
 
-The application provides health check endpoints:
-
-- **Application**: `/api/v1/health`
-- **Actuator**: `/actuator/health`
-
-## Monitoring
-
-### Metrics
-
-Prometheus metrics are exposed at:
-
-```
-http://localhost:8080/actuator/prometheus
-```
-
-Key metrics include:
-- HTTP request rates and latency
-- Database connection pool stats
-- Cache hit/miss rates
-- Kafka producer/consumer metrics
-- JVM memory and GC metrics
-
-### Logging
-
-Structured JSON logging is configured with appropriate log levels:
-
-- **Development**: DEBUG
-- **Production**: INFO/WARN
-
-Log files are stored in `logs/` directory.
-
-## Troubleshooting
-
-### Database Connection Issues
-
+Create a new migration:
 ```bash
-# Check if PostgreSQL is running
-docker ps | grep postgres
-
-# View PostgreSQL logs
-docker logs user-management-postgres
+# Create file: src/main/resources/db/migration/V{version}__{description}.sql
 ```
 
-### Redis Connection Issues
-
+Run migrations:
 ```bash
-# Test Redis connection
-docker exec -it user-management-redis redis-cli ping
+mvn flyway:migrate
 ```
 
-### Kafka Issues
+## 📦 Kafka Events
 
-```bash
-# List Kafka topics
-docker exec -it user-management-kafka kafka-topics --list --bootstrap-server localhost:9092
+The service publishes the following events to the `user-events` topic:
 
-# View Kafka logs
-docker logs user-management-kafka
+- **user.created**: When a new user registers
+- **user.updated**: When user information is updated
+- **user.deleted**: When a user is deleted
+
+Event Schema:
+```json
+{
+  "userId": "uuid",
+  "username": "string",
+  "email": "string",
+  "firstName": "string",
+  "lastName": "string"
+}
 ```
 
-## Contributing
+## 🔒 Security Considerations
+
+### Production Deployment
+
+1. **Change JWT Secret**: Use a strong, randomly generated secret
+2. **Enable HTTPS**: Configure SSL/TLS certificates
+3. **Database Security**: Use strong passwords and restrict access
+4. **Rate Limiting**: Implement API rate limiting
+5. **CORS Configuration**: Restrict allowed origins
+6. **Environment Variables**: Never commit secrets to version control
+
+### Password Requirements
+
+- Minimum 8 characters
+- At least one uppercase letter
+- At least one lowercase letter
+- At least one digit
+- At least one special character (@$!%*?&)
+
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -444,10 +387,19 @@ docker logs user-management-kafka
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## License
+## 📄 License
 
 This project is licensed under the Apache License 2.0 - see the LICENSE file for details.
 
-## Support
+## 🆘 Support
 
-For issues and questions, please open an issue on GitHub or contact support@example.com.
+For issues and questions:
+- Create an issue in the repository
+- Contact: support@usermanagement.com
+
+## 🙏 Acknowledgments
+
+- Spring Boot Team
+- PostgreSQL Community
+- Redis Community
+- Apache Kafka Team

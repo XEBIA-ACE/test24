@@ -3,6 +3,7 @@ package com.usermanagement.domain.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
@@ -10,10 +11,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Permission entity representing granular permissions.
- * Allows fine-grained access control for different resources and operations.
- */
 @Entity
 @Table(name = "permissions", indexes = {
     @Index(name = "idx_permission_name", columnList = "name")
@@ -28,18 +25,19 @@ public class Permission {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(name = "name", unique = true, nullable = false, length = 100)
     private String name;
 
-    @Column(length = 500)
+    @Column(name = "description", length = 255)
     private String description;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "resource", nullable = false, length = 50)
     private String resource;
 
-    @Column(nullable = false, length = 50)
+    @Column(name = "action", nullable = false, length = 50)
     private String action;
 
     @ManyToMany(mappedBy = "permissions")
@@ -49,4 +47,8 @@ public class Permission {
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
 }

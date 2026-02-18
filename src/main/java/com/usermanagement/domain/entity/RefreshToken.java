@@ -8,10 +8,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * RefreshToken entity for managing JWT refresh tokens.
- * Supports token rotation and revocation for enhanced security.
- */
 @Entity
 @Table(name = "refresh_tokens", indexes = {
     @Index(name = "idx_refresh_token", columnList = "token"),
@@ -27,9 +23,10 @@ public class RefreshToken {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @Column(nullable = false, unique = true, length = 500)
+    @Column(name = "token", unique = true, nullable = false)
     private String token;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -39,18 +36,12 @@ public class RefreshToken {
     @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiresAt;
 
-    @Column(name = "is_revoked", nullable = false)
+    @Column(name = "revoked", nullable = false)
     @Builder.Default
-    private Boolean isRevoked = false;
+    private Boolean revoked = false;
 
     @Column(name = "revoked_at")
     private LocalDateTime revokedAt;
-
-    @Column(name = "ip_address", length = 45)
-    private String ipAddress;
-
-    @Column(name = "user_agent", length = 500)
-    private String userAgent;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -60,8 +51,12 @@ public class RefreshToken {
         return LocalDateTime.now().isAfter(expiresAt);
     }
 
+    public boolean isValid() {
+        return !revoked && !isExpired();
+    }
+
     public void revoke() {
-        this.isRevoked = true;
+        this.revoked = true;
         this.revokedAt = LocalDateTime.now();
     }
 }

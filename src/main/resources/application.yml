@@ -28,56 +28,56 @@ spring:
         use_sql_comments: true
         jdbc:
           batch_size: 20
+        order_inserts: true
+        order_updates: true
     open-in-view: false
 
   flyway:
     enabled: true
-    locations: classpath:db/migration
     baseline-on-migrate: true
+    locations: classpath:db/migration
 
   data:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
+      timeout: 60000
       lettuce:
         pool:
           max-active: 8
           max-idle: 8
           min-idle: 0
-          max-wait: -1ms
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
       acks: all
       retries: 3
-    consumer:
-      group-id: ${KAFKA_CONSUMER_GROUP_ID:user-management-service}
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      auto-offset-reset: earliest
-      properties:
-        spring.json.trusted.packages: "*"
 
   security:
     oauth2:
       client:
         registration:
           custom:
-            client-id: ${OAUTH2_CLIENT_ID:your-client-id}
-            client-secret: ${OAUTH2_CLIENT_SECRET:your-client-secret}
-            scope: openid,profile,email
+            client-id: ${OAUTH2_CLIENT_ID:user-management-client}
+            client-secret: ${OAUTH2_CLIENT_SECRET:}
             authorization-grant-type: authorization_code
             redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:8080/login/oauth2/code/custom}
+            scope: openid,profile,email
         provider:
           custom:
-            issuer-uri: ${OAUTH2_ISSUER_URI:https://your-oauth-provider.com}
+            issuer-uri: ${OAUTH2_ISSUER_URI:http://localhost:9000}
       resourceserver:
         jwt:
-          issuer-uri: ${OAUTH2_ISSUER_URI:https://your-oauth-provider.com}
+          issuer-uri: ${OAUTH2_ISSUER_URI:http://localhost:9000}
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: UTC
 
 server:
   port: ${SERVER_PORT:8080}
@@ -86,20 +86,39 @@ server:
     include-binding-errors: always
   compression:
     enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+  forward-headers-strategy: framework
+
+jwt:
+  secret: ${JWT_SECRET:your-256-bit-secret-key-change-this-in-production-use-at-least-32-characters}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:86400000}
+
+logging:
+  level:
+    root: ${LOGGING_LEVEL_ROOT:INFO}
+    com.usermanagement: ${LOGGING_LEVEL_APP:DEBUG}
+    org.springframework.security: INFO
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/user-management-service.log
+    max-size: 10MB
+    max-history: 30
 
 management:
   endpoints:
     web:
       exposure:
-        include: ${MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE:health,info,metrics,prometheus}
+        include: ${MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE:health,metrics,prometheus,info}
       base-path: /actuator
   endpoint:
     health:
-      show-details: when-authorized
-    metrics:
-      enabled: true
-    prometheus:
-      enabled: true
+      show-details: always
   metrics:
     export:
       prometheus:
@@ -107,35 +126,11 @@ management:
     tags:
       application: ${spring.application.name}
 
-logging:
-  level:
-    root: ${LOGGING_LEVEL_ROOT:INFO}
-    com.usermanagement: ${LOGGING_LEVEL_APP:DEBUG}
-    org.springframework.web: INFO
-    org.springframework.security: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-
 springdoc:
   api-docs:
-    path: /api-docs
+    path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
-    enabled: true
-
-app:
-  jwt:
-    secret: ${JWT_SECRET:your-256-bit-secret-key-change-this-in-production}
-    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
-    refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}
-  redis:
-    ttl-seconds: ${REDIS_TTL_SECONDS:3600}
-  kafka:
-    topics:
-      user-events: ${KAFKA_TOPIC_USER_EVENTS:user-events}
-  oauth2:
-    pkce:
-      enabled: true
+    operationsSorter: method
+    tagsSorter: alpha
+  show-actuator: true
